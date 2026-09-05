@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 const CSV_PATH = "/data/activation_2026-08-02_20260802T112020Z.csv";
-const LOG_PATH = "/logs/process.log";
+const LOG_PATH = "/weekly_logs/process.log";
 const MAP_PATH = (basinKey) => `/maps/${basinKey}_population_exposed_map.png`;
 
 function fmt(n) {
