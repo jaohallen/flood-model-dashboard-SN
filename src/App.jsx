@@ -668,7 +668,7 @@ export default function FloodDashboard() {
               No activation - {basin.name} River Basin
             </p>
             <p style={{ fontSize: 14.5, color: "#fbead1", maxWidth: "48ch", margin: "0 auto" }}>
-              The flood model did not activate the {basin.name} River Basin during the <br />{formatRunDate(expectedDate)}{" "}
+              The flood model did not activate the {basin.name} River Basin during the {formatRunDate(expectedDate)}{" "}
               monitoring run.
             </p>
           </div>
