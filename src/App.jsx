@@ -25,9 +25,6 @@ function parseCSV(text) {
   });
 }
 
-// The CSV's issue_date has shown up as both ISO ("2026-08-02") and US-style
-// ("8/2/2026") depending on how it was exported, so normalize to ISO before
-// using it for date math or comparisons anywhere else in this file.
 function normalizeDateStr(raw) {
   if (!raw) return raw;
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
@@ -424,7 +421,6 @@ export default function FloodDashboard() {
           conditions.
         </p>
 
-        {/* hero */}
         <div
           style={{
             display: "flex",
@@ -439,8 +435,8 @@ export default function FloodDashboard() {
         >
           
           
+        {/* Row: Activation status */}
 
-          {/* Row 3: Activation Status */}
           <div
             style={{
               fontFamily: "'IBM Plex Mono', monospace",
@@ -455,7 +451,8 @@ export default function FloodDashboard() {
           </div>
         </div>
 
-        {/* stat row */}
+        {/* Row: Probability and lead days */}
+
         <div
           style={{
             display: "grid",
@@ -671,7 +668,7 @@ export default function FloodDashboard() {
               No activation - {basin.name} River Basin
             </p>
             <p style={{ fontSize: 14.5, color: "#fbead1", maxWidth: "48ch", margin: "0 auto" }}>
-              The flood model did not activate {basin.name} during the <br />{formatRunDate(expectedDate)}{" "}
+              The flood model did not activate the {basin.name} River Basin during the <br />{formatRunDate(expectedDate)}{" "}
               monitoring run.
             </p>
           </div>
@@ -680,8 +677,6 @@ export default function FloodDashboard() {
         {/* process log — summarized to one row per day, filtered to the active basin */}
         <section style={{ marginBottom: 40 }}>
           {(() => {
-            // Rows without a parsed basin (older log formats) are kept visible
-            // regardless of which tab is active, rather than silently dropped.
             const filteredLogRows = logRows.filter(
               (r) => r.basinKey == null || r.basinKey === activeBasin
             );
