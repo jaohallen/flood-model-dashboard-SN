@@ -1,74 +1,3 @@
-Aug 29 18:30:16 cenvi510-storage systemd[1]: Starting glofas-fetch.service - Fetch GloFAS via lftp...
-Aug 29 18:41:44 cenvi510-storage glofas-fetch[220030]: 86859500 bytes transferred in 684 seconds (124.1 KiB/s)
-Aug 29 18:41:44 cenvi510-storage systemd[1]: glofas-fetch.service: Deactivated successfully.
-Aug 29 18:41:44 cenvi510-storage systemd[1]: Finished glofas-fetch.service - Fetch GloFAS via lftp.
-Aug 29 18:41:44 cenvi510-storage systemd[1]: glofas-fetch.service: Consumed 3.422s CPU time.
-Aug 29 18:41:44 cenvi510-storage systemd[1]: Starting river-flood-process.service - Process GloFAS data for river flood workflow...
-Aug 29 18:41:45 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:41:45 | INFO     | pipeline   | run_daily_monitoring:60      | run_daily_monitoring started — run='daily_flood_monitoring', issue_date=2026-08-29, basins=2, steps=[extract=True, forecast=True, save=True], log=logs/2026/08/daily_flood_monitoring_20260829T184145.txt
-Aug 29 18:41:45 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:41:45 | INFO     | extract    | extract:31                   | Processing basin 'cagayan'
-Aug 29 18:41:45 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:41:45 | INFO     | extract    | _resolve_forecast_path:109   | Checking forecast file: /var/cache/glofas/glofas_areagrid_for_Phillippines_in_Phillippines_2026082900.nc
-Aug 29 18:41:45 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:41:45 | INFO     | extract    | _resolve_forecast_path:111   | Forecast file found: /var/cache/glofas/glofas_areagrid_for_Phillippines_in_Phillippines_2026082900.nc
-Aug 29 18:41:45 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:41:45 | INFO     | extract    | _load_oep_thresholds:130     | Loading OEP thresholds from config/risk_profiles/cagayan_oep_curves_all_units.json (oep_min=100)
-Aug 29 18:41:45 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:41:45 | INFO     | extract    | _load_oep_thresholds:168     | OEP thresholds loaded: 337 units with valid thresholds (from 338 total, oep_min=100)
-Aug 29 18:41:45 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:41:45 | INFO     | extract    | _filter_units_by_target_adm2:243 | Target ADM2 filtering complete for basin 'cagayan': 337 -> 25 units (targets=1)
-Aug 29 18:41:45 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:41:45 | INFO     | forecast   | forecast:59                  | Starting evaluation — basin='cagayan', issue_date=2026-08-29
-Aug 29 18:41:45 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:41:45 | INFO     | forecast   | detect_flood_events:1318     | Detect phase (detect_flood_events) — basin='cagayan', issue_date=2026-08-29, leads=[1, 2, 3, 4, 5], t0_years=2.0, a_min_km2=100
-Aug 29 18:41:45 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:41:45 | INFO     | forecast   | detect_flood_events:1357     | EVT1 params loaded: 1024 cells for basin 'cagayan'
-Aug 29 18:41:51 cenvi510-storage river-flood-process[220110]: /opt/river-flood-workflow/.venv/lib/python3.11/site-packages/xarray/backends/plugins.py:109: RuntimeWarning: Engine 'cfgrib' loading failed:
-Aug 29 18:41:51 cenvi510-storage river-flood-process[220110]: Cannot find the ecCodes library
-Aug 29 18:41:51 cenvi510-storage river-flood-process[220110]:   external_backend_entrypoints = backends_dict_from_pkg(entrypoints_unique)
-Aug 29 18:41:52 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:41:52 | INFO     | forecast   | _open_forecast_source:891    | Forecast source opened: 1 files, time_dim='time', member_dim='member', indexed_members=51
-Aug 29 18:41:53 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:41:53 | INFO     | forecast   | detect_flood_events:1455     | Lead  1d: 0/51 flood members, 0 qualifying patches
-Aug 29 18:41:54 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:41:54 | INFO     | forecast   | detect_flood_events:1455     | Lead  2d: 1/51 flood members, 1 qualifying patches
-Aug 29 18:41:59 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:41:59 | INFO     | forecast   | detect_flood_events:1455     | Lead  3d: 8/51 flood members, 11 qualifying patches
-Aug 29 18:42:37 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:42:37 | INFO     | forecast   | _compute_impacts_from_event_patches:590 | Computed impacts from 4/4 event patches: 1 members, 1 lead days, 1 units
-Aug 29 18:42:39 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:42:39 | INFO     | forecast   | detect_flood_events:1455     | Lead  4d: 11/51 flood members, 26 qualifying patches
-Aug 29 18:44:46 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:44:46 | INFO     | forecast   | _compute_impacts_from_event_patches:590 | Computed impacts from 40/40 event patches: 6 members, 1 lead days, 10 units
-Aug 29 18:44:49 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:44:49 | INFO     | forecast   | detect_flood_events:1455     | Lead  5d: 17/51 flood members, 52 qualifying patches
-Aug 29 18:49:58 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:58 | INFO     | forecast   | _compute_impacts_from_event_patches:590 | Computed impacts from 116/116 event patches: 11 members, 1 lead days, 10 units
-Aug 29 18:49:58 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:58 | INFO     | forecast   | detect_flood_events:1537     | Detect phase complete — 339 units, 5 lead days, 51 members
-Aug 29 18:49:58 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:58 | INFO     | forecast   | forecast:77                  | Detection mode complete — impact cube has 339 units
-Aug 29 18:49:58 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:58 | INFO     | forecast   | _aggregate_adm3_impacts_to_adm2:181 | ADM2 aggregation complete: 24 ADM3 units rolled up into parent ADM2 impact totals
-Aug 29 18:49:58 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:58 | INFO     | forecast   | _compute_prob_exceed:1562    | Computing exceedance probabilities: 339 cube units, 51 ensemble members
-Aug 29 18:49:58 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:58 | INFO     | forecast   | _compute_prob_exceed:1581    | Exceedance probabilities computed for 25 qualifying units
-Aug 29 18:49:58 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:58 | INFO     | forecast   | _apply_tier_rules:210        | Applying 3 tier rules to 25 units (persist_days=2, min_lead=1)
-Aug 29 18:49:58 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:58 | INFO     | forecast   | _apply_tier_rules:305        | Tier evaluation complete: 25 units, 0 tier decisions fired, 1 units below oep_min=100
-Aug 29 18:49:58 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:58 | INFO     | forecast   | forecast:96                  | Evaluation complete — basin='cagayan', 25 units evaluated
-Aug 29 18:49:58 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:58 | INFO     | extract    | extract:31                   | Processing basin 'bicol'
-Aug 29 18:49:58 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:58 | INFO     | extract    | _resolve_forecast_path:109   | Checking forecast file: /var/cache/glofas/glofas_areagrid_for_Phillippines_in_Phillippines_2026082900.nc
-Aug 29 18:49:58 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:58 | INFO     | extract    | _resolve_forecast_path:111   | Forecast file found: /var/cache/glofas/glofas_areagrid_for_Phillippines_in_Phillippines_2026082900.nc
-Aug 29 18:49:58 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:58 | INFO     | extract    | _load_oep_thresholds:130     | Loading OEP thresholds from config/risk_profiles/bicol_oep_curves_all_units.json (oep_min=100)
-Aug 29 18:49:58 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:58 | INFO     | extract    | _load_oep_thresholds:168     | OEP thresholds loaded: 138 units with valid thresholds (from 139 total, oep_min=100)
-Aug 29 18:49:59 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:59 | INFO     | extract    | _filter_units_by_target_adm2:243 | Target ADM2 filtering complete for basin 'bicol': 138 -> 35 units (targets=1)
-Aug 29 18:49:59 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:59 | INFO     | forecast   | forecast:59                  | Starting evaluation — basin='bicol', issue_date=2026-08-29
-Aug 29 18:49:59 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:59 | INFO     | forecast   | detect_flood_events:1318     | Detect phase (detect_flood_events) — basin='bicol', issue_date=2026-08-29, leads=[1, 2, 3, 4, 5], t0_years=2.0, a_min_km2=100
-Aug 29 18:49:59 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:49:59 | INFO     | forecast   | detect_flood_events:1357     | EVT1 params loaded: 137 cells for basin 'bicol'
-Aug 29 18:50:04 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:04 | INFO     | forecast   | _open_forecast_source:891    | Forecast source opened: 1 files, time_dim='time', member_dim='member', indexed_members=51
-Aug 29 18:50:05 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:05 | INFO     | forecast   | detect_flood_events:1455     | Lead  1d: 0/51 flood members, 0 qualifying patches
-Aug 29 18:50:06 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:06 | INFO     | forecast   | detect_flood_events:1455     | Lead  2d: 0/51 flood members, 0 qualifying patches
-Aug 29 18:50:08 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:08 | INFO     | forecast   | detect_flood_events:1455     | Lead  3d: 0/51 flood members, 0 qualifying patches
-Aug 29 18:50:11 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:11 | INFO     | forecast   | detect_flood_events:1455     | Lead  4d: 0/51 flood members, 0 qualifying patches
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | forecast   | detect_flood_events:1455     | Lead  5d: 0/51 flood members, 0 qualifying patches
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | forecast   | detect_flood_events:1537     | Detect phase complete — 138 units, 5 lead days, 51 members
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | forecast   | forecast:77                  | Detection mode complete — impact cube has 138 units
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | forecast   | _aggregate_adm3_impacts_to_adm2:181 | ADM2 aggregation complete: 34 ADM3 units rolled up into parent ADM2 impact totals
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | forecast   | _compute_prob_exceed:1562    | Computing exceedance probabilities: 138 cube units, 51 ensemble members
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | forecast   | _compute_prob_exceed:1581    | Exceedance probabilities computed for 35 qualifying units
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | forecast   | _apply_tier_rules:210        | Applying 3 tier rules to 35 units (persist_days=2, min_lead=1)
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | forecast   | _apply_tier_rules:305        | Tier evaluation complete: 35 units, 0 tier decisions fired, 35 units below oep_min=100
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | forecast   | forecast:96                  | Evaluation complete — basin='bicol', 35 units evaluated
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | save       | save:37                      | Writing output: 2 basins, format=csv, dir=data/gold/trigger_decisions/2026-08-29
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | save       | _save_activation_decisions:222 | Activation file written: data/gold/trigger_decisions/2026-08-29/activation_2026-08-29_20260829T105014Z.csv
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | save       | _save_operational_information:235 | Operational information file written: data/gold/trigger_decisions/2026-08-29/operational_information_2026-08-29_20260829T105014Z.csv
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | save       | save:79                      | No activated tiers found; skipping decision summary file
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | save       | _prepare_trigger_decisions_for_plotting:282 | Skipping map plotting: no activated rows in CSV
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | save       | _save_maps:545               | Map files saved: 0 map(s) written to data/gold/trigger_decisions/2026-08-29/maps
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | pipeline   | run_daily_monitoring:127     | run_daily_monitoring complete — 2 basins, 0 tier fires, activation=data/gold/trigger_decisions/2026-08-29/activation_2026-08-29_20260829T105014Z.csv, operational_information=data/gold/trigger_decisions/2026-08-29/operational_information_2026-08-29_20260829T105014Z.csv
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220110]: 2026-08-29 18:50:14 | INFO     | cli        | main:80                      | Daily ETL complete: 2 basins, 60 units, 0 fired tier decisions. Output: data/gold/trigger_decisions/2026-08-29/operational_information_2026-08-29_20260829T105014Z.csv
-Aug 29 18:50:14 cenvi510-storage river-flood-process[220104]: No alert requested.
-Aug 29 18:50:14 cenvi510-storage systemd[1]: river-flood-process.service: Deactivated successfully.
-Aug 29 18:50:14 cenvi510-storage systemd[1]: Finished river-flood-process.service - Process GloFAS data for river flood workflow.
-Aug 29 18:50:14 cenvi510-storage systemd[1]: river-flood-process.service: Consumed 8min 30.582s CPU time.
 Aug 30 18:30:16 cenvi510-storage systemd[1]: Starting glofas-fetch.service - Fetch GloFAS via lftp...
 Aug 30 18:45:06 cenvi510-storage glofas-fetch[229117]: 86860134 bytes transferred in 886 seconds (95.8 KiB/s)
 Aug 30 18:45:06 cenvi510-storage systemd[1]: glofas-fetch.service: Deactivated successfully.
@@ -424,3 +353,72 @@ Sep 04 18:52:35 cenvi510-storage river-flood-process[5308]: No alert requested.
 Sep 04 18:52:35 cenvi510-storage systemd[1]: river-flood-process.service: Deactivated successfully.
 Sep 04 18:52:35 cenvi510-storage systemd[1]: Finished river-flood-process.service - Process GloFAS data for river flood workflow.
 Sep 04 18:52:35 cenvi510-storage systemd[1]: river-flood-process.service: Consumed 36.623s CPU time.
+Sep 05 18:30:16 cenvi510-storage systemd[1]: Starting glofas-fetch.service - Fetch GloFAS via lftp...
+Sep 05 18:33:52 cenvi510-storage glofas-fetch[21082]: 86717166 bytes transferred in 211 seconds (401.3 KiB/s)
+Sep 05 18:33:52 cenvi510-storage systemd[1]: glofas-fetch.service: Deactivated successfully.
+Sep 05 18:33:52 cenvi510-storage systemd[1]: Finished glofas-fetch.service - Fetch GloFAS via lftp.
+Sep 05 18:33:52 cenvi510-storage systemd[1]: glofas-fetch.service: Consumed 1.293s CPU time.
+Sep 05 18:33:52 cenvi510-storage systemd[1]: Starting river-flood-process.service - Process GloFAS data for river flood workflow...
+Sep 05 18:33:53 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:33:53 | INFO     | pipeline   | run_daily_monitoring:60      | run_daily_monitoring started — run='daily_flood_monitoring', issue_date=2026-09-05, basins=2, steps=[extract=True, forecast=True, save=True], log=logs/2026/09/daily_flood_monitoring_20260905T183353.txt
+Sep 05 18:33:53 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:33:53 | INFO     | extract    | extract:31                   | Processing basin 'cagayan'
+Sep 05 18:33:53 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:33:53 | INFO     | extract    | _resolve_forecast_path:109   | Checking forecast file: /var/cache/glofas/glofas_areagrid_for_Phillippines_in_Phillippines_2026090500.nc
+Sep 05 18:33:53 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:33:53 | INFO     | extract    | _resolve_forecast_path:111   | Forecast file found: /var/cache/glofas/glofas_areagrid_for_Phillippines_in_Phillippines_2026090500.nc
+Sep 05 18:33:53 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:33:53 | INFO     | extract    | _load_oep_thresholds:130     | Loading OEP thresholds from config/risk_profiles/cagayan_oep_curves_all_units.json (oep_min=100)
+Sep 05 18:33:53 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:33:53 | INFO     | extract    | _load_oep_thresholds:168     | OEP thresholds loaded: 337 units with valid thresholds (from 338 total, oep_min=100)
+Sep 05 18:33:54 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:33:54 | INFO     | extract    | _filter_units_by_target_adm2:243 | Target ADM2 filtering complete for basin 'cagayan': 337 -> 25 units (targets=1)
+Sep 05 18:33:54 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:33:54 | INFO     | forecast   | forecast:59                  | Starting evaluation — basin='cagayan', issue_date=2026-09-05
+Sep 05 18:33:54 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:33:54 | INFO     | forecast   | detect_flood_events:1318     | Detect phase (detect_flood_events) — basin='cagayan', issue_date=2026-09-05, leads=[1, 2, 3, 4, 5], t0_years=2.0, a_min_km2=100
+Sep 05 18:33:54 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:33:54 | INFO     | forecast   | detect_flood_events:1357     | EVT1 params loaded: 1024 cells for basin 'cagayan'
+Sep 05 18:34:00 cenvi510-storage river-flood-process[21104]: /opt/river-flood-workflow/.venv/lib/python3.11/site-packages/xarray/backends/plugins.py:109: RuntimeWarning: Engine 'cfgrib' loading failed:
+Sep 05 18:34:00 cenvi510-storage river-flood-process[21104]: Cannot find the ecCodes library
+Sep 05 18:34:00 cenvi510-storage river-flood-process[21104]:   external_backend_entrypoints = backends_dict_from_pkg(entrypoints_unique)
+Sep 05 18:34:01 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:01 | INFO     | forecast   | _open_forecast_source:891    | Forecast source opened: 1 files, time_dim='time', member_dim='member', indexed_members=51
+Sep 05 18:34:02 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:02 | INFO     | forecast   | detect_flood_events:1455     | Lead  1d: 0/51 flood members, 0 qualifying patches
+Sep 05 18:34:03 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:03 | INFO     | forecast   | detect_flood_events:1455     | Lead  2d: 0/51 flood members, 0 qualifying patches
+Sep 05 18:34:05 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:05 | INFO     | forecast   | detect_flood_events:1455     | Lead  3d: 0/51 flood members, 0 qualifying patches
+Sep 05 18:34:07 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:07 | INFO     | forecast   | detect_flood_events:1455     | Lead  4d: 0/51 flood members, 0 qualifying patches
+Sep 05 18:34:10 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:10 | INFO     | forecast   | detect_flood_events:1455     | Lead  5d: 5/51 flood members, 5 qualifying patches
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | forecast   | _compute_impacts_from_event_patches:590 | Computed impacts from 8/8 event patches: 2 members, 1 lead days, 16 units
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | forecast   | detect_flood_events:1537     | Detect phase complete — 338 units, 5 lead days, 51 members
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | forecast   | forecast:77                  | Detection mode complete — impact cube has 338 units
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | forecast   | _aggregate_adm3_impacts_to_adm2:181 | ADM2 aggregation complete: 24 ADM3 units rolled up into parent ADM2 impact totals
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | forecast   | _compute_prob_exceed:1562    | Computing exceedance probabilities: 338 cube units, 51 ensemble members
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | forecast   | _compute_prob_exceed:1581    | Exceedance probabilities computed for 25 qualifying units
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | forecast   | _apply_tier_rules:210        | Applying 3 tier rules to 25 units (persist_days=2, min_lead=1)
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | forecast   | _apply_tier_rules:305        | Tier evaluation complete: 25 units, 0 tier decisions fired, 1 units below oep_min=100
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | forecast   | forecast:96                  | Evaluation complete — basin='cagayan', 25 units evaluated
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | extract    | extract:31                   | Processing basin 'bicol'
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | extract    | _resolve_forecast_path:109   | Checking forecast file: /var/cache/glofas/glofas_areagrid_for_Phillippines_in_Phillippines_2026090500.nc
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | extract    | _resolve_forecast_path:111   | Forecast file found: /var/cache/glofas/glofas_areagrid_for_Phillippines_in_Phillippines_2026090500.nc
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | extract    | _load_oep_thresholds:130     | Loading OEP thresholds from config/risk_profiles/bicol_oep_curves_all_units.json (oep_min=100)
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | extract    | _load_oep_thresholds:168     | OEP thresholds loaded: 138 units with valid thresholds (from 139 total, oep_min=100)
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | extract    | _filter_units_by_target_adm2:243 | Target ADM2 filtering complete for basin 'bicol': 138 -> 35 units (targets=1)
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | forecast   | forecast:59                  | Starting evaluation — basin='bicol', issue_date=2026-09-05
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | forecast   | detect_flood_events:1318     | Detect phase (detect_flood_events) — basin='bicol', issue_date=2026-09-05, leads=[1, 2, 3, 4, 5], t0_years=2.0, a_min_km2=100
+Sep 05 18:34:41 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:41 | INFO     | forecast   | detect_flood_events:1357     | EVT1 params loaded: 137 cells for basin 'bicol'
+Sep 05 18:34:46 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:46 | INFO     | forecast   | _open_forecast_source:891    | Forecast source opened: 1 files, time_dim='time', member_dim='member', indexed_members=51
+Sep 05 18:34:47 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:47 | INFO     | forecast   | detect_flood_events:1455     | Lead  1d: 0/51 flood members, 0 qualifying patches
+Sep 05 18:34:48 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:48 | INFO     | forecast   | detect_flood_events:1455     | Lead  2d: 0/51 flood members, 0 qualifying patches
+Sep 05 18:34:50 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:50 | INFO     | forecast   | detect_flood_events:1455     | Lead  3d: 0/51 flood members, 0 qualifying patches
+Sep 05 18:34:52 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:52 | INFO     | forecast   | detect_flood_events:1455     | Lead  4d: 0/51 flood members, 0 qualifying patches
+Sep 05 18:34:55 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:55 | INFO     | forecast   | detect_flood_events:1455     | Lead  5d: 0/51 flood members, 0 qualifying patches
+Sep 05 18:34:55 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:55 | INFO     | forecast   | detect_flood_events:1537     | Detect phase complete — 138 units, 5 lead days, 51 members
+Sep 05 18:34:55 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:55 | INFO     | forecast   | forecast:77                  | Detection mode complete — impact cube has 138 units
+Sep 05 18:34:55 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:55 | INFO     | forecast   | _aggregate_adm3_impacts_to_adm2:181 | ADM2 aggregation complete: 34 ADM3 units rolled up into parent ADM2 impact totals
+Sep 05 18:34:55 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:55 | INFO     | forecast   | _compute_prob_exceed:1562    | Computing exceedance probabilities: 138 cube units, 51 ensemble members
+Sep 05 18:34:55 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:55 | INFO     | forecast   | _compute_prob_exceed:1581    | Exceedance probabilities computed for 35 qualifying units
+Sep 05 18:34:55 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:55 | INFO     | forecast   | _apply_tier_rules:210        | Applying 3 tier rules to 35 units (persist_days=2, min_lead=1)
+Sep 05 18:34:55 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:55 | INFO     | forecast   | _apply_tier_rules:305        | Tier evaluation complete: 35 units, 0 tier decisions fired, 35 units below oep_min=100
+Sep 05 18:34:55 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:55 | INFO     | forecast   | forecast:96                  | Evaluation complete — basin='bicol', 35 units evaluated
+Sep 05 18:34:56 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:56 | INFO     | save       | save:37                      | Writing output: 2 basins, format=csv, dir=data/gold/trigger_decisions/2026-09-05
+Sep 05 18:34:56 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:56 | INFO     | save       | _save_activation_decisions:222 | Activation file written: data/gold/trigger_decisions/2026-09-05/activation_2026-09-05_20260905T103456Z.csv
+Sep 05 18:34:56 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:56 | INFO     | save       | _save_operational_information:235 | Operational information file written: data/gold/trigger_decisions/2026-09-05/operational_information_2026-09-05_20260905T103456Z.csv
+Sep 05 18:34:56 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:56 | INFO     | save       | save:79                      | No activated tiers found; skipping decision summary file
+Sep 05 18:34:56 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:56 | INFO     | save       | _prepare_trigger_decisions_for_plotting:282 | Skipping map plotting: no activated rows in CSV
+Sep 05 18:34:56 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:56 | INFO     | save       | _save_maps:545               | Map files saved: 0 map(s) written to data/gold/trigger_decisions/2026-09-05/maps
+Sep 05 18:34:56 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:56 | INFO     | pipeline   | run_daily_monitoring:127     | run_daily_monitoring complete — 2 basins, 0 tier fires, activation=data/gold/trigger_decisions/2026-09-05/activation_2026-09-05_20260905T103456Z.csv, operational_information=data/gold/trigger_decisions/2026-09-05/operational_information_2026-09-05_20260905T103456Z.csv
+Sep 05 18:34:56 cenvi510-storage river-flood-process[21104]: 2026-09-05 18:34:56 | INFO     | cli        | main:80                      | Daily ETL complete: 2 basins, 60 units, 0 fired tier decisions. Output: data/gold/trigger_decisions/2026-09-05/operational_information_2026-09-05_20260905T103456Z.csv
+Sep 05 18:34:56 cenvi510-storage river-flood-process[21098]: No alert requested.
+Sep 05 18:34:56 cenvi510-storage systemd[1]: river-flood-process.service: Deactivated successfully.
+Sep 05 18:34:56 cenvi510-storage systemd[1]: Finished river-flood-process.service - Process GloFAS data for river flood workflow.
+Sep 05 18:34:56 cenvi510-storage systemd[1]: river-flood-process.service: Consumed 1min 2.515s CPU time.
