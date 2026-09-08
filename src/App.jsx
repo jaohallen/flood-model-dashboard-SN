@@ -3,10 +3,12 @@ import React, { useState, useEffect } from "react";
 const LOG_PATH = "/logs/workflow.log";
 
 function fmt(n) {
+  if (n == null || Number.isNaN(Number(n))) return "—";
   return Math.round(n).toLocaleString("en-US");
 }
 
 function pct(n) {
+  if (n == null || Number.isNaN(Number(n))) return "—%";
   return (n * 100).toFixed(1) + "%";
 }
 
@@ -251,14 +253,13 @@ function formatLogDateRange(rows) {
 
 async function findCsvPath() {
   const modules = import.meta.glob('/public/data/*.csv');
-  const fileKeys = Object.keys(modules);
+  const fileKeys = Object.keys(modules).sort(); // Sort alphabetically/chronologically
 
   if (fileKeys.length === 0) {
     throw new Error("No CSV file found inside /public/data/");
   }
-  const selectedPath = fileKeys[0].replace("/public", "");
-  console.log("Active CSV file:", selectedPath);
-  return fileKeys[0].replace('/public', '');
+  const latestFile = fileKeys.pop(); // Guarantees selecting the latest file name
+  return latestFile.replace('/public', '');
 }
 
 function getActivatedMapPath(basinKey, isActivated) {
@@ -285,7 +286,7 @@ function getActivatedMapPath(basinKey, isActivated) {
         `%c[Map Located] Found map for '${basinKey}': ${fileName}`,
         "color: #48bf53; font-weight: bold;"
       );
-      return resolvedUrl;
+      return { url: resolvedUrl, fileName };
     }
 
     console.warn(
@@ -405,7 +406,9 @@ export default function FloodDashboard() {
   if (!basin) return null;
 
   const isBasinActivated = basin.thresholds.length > 0 && basin.thresholds.some((t) => t.fired);
-  const activeMapPath = getActivatedMapPath(basin.basinKey, isBasinActivated);
+  const activeMap = getActivatedMapPath(basin.basinKey, isBasinActivated);
+  const activeMapPath = activeMap?.url ?? null;
+  const activeMapFileName = activeMap?.fileName ?? null;
 
   const expectedDate = expectedActivationDate();
   const isCurrent = csvFileDate === expectedDate;
@@ -485,13 +488,13 @@ export default function FloodDashboard() {
               style={{
                 color: "#fbead1",
                 fontSize: 15,
-                margin: "0 auto 30px",
+                margin: "0 auto 10px",
                 textAlign: "center",
               }}
             >
               Anticipatory action fired at a{" "}
               <strong style={{ color: "#f0e9dd", fontWeight: 500 }}>{basin.fireLead}-day</strong> lead
-              time. {basin.thresholds.filter((t) => t.fired).length} of {basin.thresholds.length}{" "}
+              time. <br />{basin.thresholds.filter((t) => t.fired).length} of {basin.thresholds.length}{" "}
               severity levels ({basin.thresholds.map((t) => t.rp).join(", ")}) cleared their trigger
               conditions.
             </p>
@@ -511,11 +514,10 @@ export default function FloodDashboard() {
               <div
                 style={{
                   fontFamily: "'IBM Plex Mono', monospace",
-                  fontSize: 36,
+                  fontSize: 40,
                   background: "#b8320f",
-                  padding: "15px 20px",
+                  padding: "20px 30px",
                   whiteSpace: "nowrap",
-                  marginTop: 4,
                 }}
               >
                 ACTIVATED
@@ -563,10 +565,32 @@ export default function FloodDashboard() {
             </div>
 
             {/* Row 2: Phrase */}
-            <div style={{ fontSize: 15, color: "#fbead1", lineHeight: 1.4, marginBottom: 32 }}>
+            <div style={{ fontSize: 15, color: "#fbead1", lineHeight: 1.4, marginBottom: 8}}>
               people projected to be exposed to flooding at the {basin.fireLead}-day forecast lead
             </div>
-
+            <div
+              style={{
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: 10,
+                color: "#fbead1",
+                opacity: 0.75,
+                marginBottom: 32,
+                fontStyle: "italic",
+              }}
+            >
+            <p
+              style={{
+                fontSize: 11,
+                color: "#fbead1",
+                opacity: 0.65,
+                margin: "14px auto 0",
+                fontStyle: "italic",
+              }}
+            >
+              Note: {formatRunDate(expectedDate)} reflects a daily 6:00 PM Manila cutoff, aligned with global forecast update schedules (~10:00 UTC).
+              Source: {csvPath}
+            </p>
+            </div>
             {/* map */}
             <section style={{ marginBottom: 34 }}>
               <h2
@@ -600,6 +624,18 @@ export default function FloodDashboard() {
                   </div>
                   <p style={{ fontSize: 13, color: "#fbead1", marginTop: 10 }}>
                     Population exposed at lead day {basin.fireLead} — {basin.name} basin.
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontSize: 10,
+                      color: "#fbead1",
+                      opacity: 0.75,
+                      marginTop: 4,
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Source: /src/assets/maps/{activeMapFileName}
                   </p>
                 </>
               ) : (
@@ -650,11 +686,11 @@ export default function FloodDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {basin.thresholds.map((t) => {
+                  {basin.thresholds.map((t, idx) => {
                     const isActive = activeRp === t.rp;
                     return (
                       <tr
-                        key={t.rp}
+                        key={`${t.rp}-${idx}`}
                         onClick={() => setActiveRp(isActive ? null : t.rp)}
                         style={{
                           cursor: "pointer",
@@ -719,17 +755,18 @@ export default function FloodDashboard() {
                   })}
                 </tbody>
               </table>
-              {activeRp && (
-                <p style={{ fontSize: 13.5, color: "#48bf53", marginTop: 14 }}>
-                  {(() => {
-                    const t = basin.thresholds.find((x) => x.rp === activeRp);
-                    const diff = basin.popAtFire - t.popThreshold;
-                    return `${fmt(basin.popAtFire)} ${diff >= 0 ? "exceeds" : "falls short of"} the ${
+              {activeRp && (() => {
+                const t = basin.thresholds.find((x) => x.rp === activeRp);
+                if (!t) return null; // Guard against undefined lookup
+                const diff = basin.popAtFire - t.popThreshold;
+                return (
+                  <p style={{ fontSize: 13.5, color: "#48bf53", marginTop: 14 }}>
+                    {`${fmt(basin.popAtFire)} ${diff >= 0 ? "exceeds" : "falls short of"} the ${
                       activeRp
-                    } population threshold of ${fmt(t.popThreshold)} by ${fmt(Math.abs(diff))} people.`;
-                  })()}
-                </p>
-              )}
+                    } population threshold of ${fmt(t.popThreshold)} by ${fmt(Math.abs(diff))} people.`}
+                  </p>
+                );
+              })()}
             </section>
           </>
         ) : (
@@ -757,6 +794,17 @@ export default function FloodDashboard() {
               The flood model did not activate the {basin.name} River Basin during the {formatRunDate(expectedDate)}{" "}
               monitoring run.
             </p>
+            <p
+              style={{
+                fontSize: 11,
+                color: "#fbead1",
+                opacity: 0.65,
+                margin: "14px auto 0",
+                fontStyle: "italic",
+              }}
+            >
+              Note: {formatRunDate(expectedDate)} reflects a daily 6:00 PM Manila cutoff, aligned with global forecast update schedules (~10:00 UTC).
+            </p>
           </div>
         )}
 
@@ -764,7 +812,7 @@ export default function FloodDashboard() {
         <section style={{ marginBottom: 40 }}>
           {(() => {
             const filteredLogRows = logRows.filter(
-              (r) => r.basinKey == null || r.basinKey === activeBasin
+              (r) => r.basinKey == null || r.basinKey?.toLowerCase() === activeBasin?.toLowerCase()
             );
             return (
               <>
