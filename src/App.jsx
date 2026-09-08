@@ -252,14 +252,21 @@ function formatLogDateRange(rows) {
 }
 
 async function findCsvPath() {
-  const modules = import.meta.glob('/public/data/*.csv');
+  const modules = import.meta.glob('/src/assets/data/*.csv', {
+    eager: true,
+    query: '?raw',
+    import: 'default',
+  });
   const fileKeys = Object.keys(modules).sort(); // Sort alphabetically/chronologically
-
+ 
   if (fileKeys.length === 0) {
-    throw new Error("No CSV file found inside /public/data/");
+    throw new Error("No CSV file found inside src/assets/data/");
   }
-  const latestFile = fileKeys.pop(); // Guarantees selecting the latest file name
-  return latestFile.replace('/public', '');
+  const latestKey = fileKeys.pop(); // Guarantees selecting the latest file name
+  return {
+    fileName: latestKey.split("/").pop(),
+    text: modules[latestKey], // raw CSV text, already loaded (eager: true)
+  };
 }
 
 function getActivatedMapPath(basinKey, isActivated) {
@@ -320,25 +327,20 @@ export default function FloodDashboard() {
 
     async function loadData() {
       try {
-        const path = await findCsvPath();
-        const extractedDate = (path.match(/(\d{4}-\d{2}-\d{2})/) || [])[1] || null;
-        const extractedStamp = (path.match(/(\d{8}T\d{6}Z)/) || [])[1] || null;
-
-        const csvRes = await fetch(path);
-        if (!csvRes.ok) {
-          throw new Error(`Could not load ${path} (${csvRes.status})`);
-        }
-        const csvText = await csvRes.text();
+        const { fileName, text: csvText } = await findCsvPath();
+        const extractedDate = (fileName.match(/(\d{4}-\d{2}-\d{2})/) || [])[1] || null;
+        const extractedStamp = (fileName.match(/(\d{8}T\d{6}Z)/) || [])[1] || null;
+ 
         const parsedBasins = buildBasins(parseCSV(csvText));
-
+ 
         let parsedLogRows = [];
         try {
           const logRes = await fetch(LOG_PATH);
           if (logRes.ok) parsedLogRows = parseProcessLog(await logRes.text());
         } catch (_) {}
-
+ 
         if (!cancelled) {
-          setCsvPath(path);
+          setCsvPath(fileName);
           setCsvFileDate(extractedDate);
           setCsvFileStamp(extractedStamp);
           setBasins(parsedBasins);
@@ -434,7 +436,7 @@ export default function FloodDashboard() {
           }}
         >
           <span>
-            {basin.name.toUpperCase()} · {basin.level}
+            {basin.name.toUpperCase()} RIVER BASIN
           </span>
         </div>
 
@@ -623,7 +625,7 @@ export default function FloodDashboard() {
                     />
                   </div>
                   <p style={{ fontSize: 13, color: "#fbead1", marginTop: 10 }}>
-                    Population exposed at lead day {basin.fireLead} — {basin.name} basin.
+                    Population exposed at lead day {basin.fireLead} for {basin.name} basin.
                   </p>
                   <p
                     style={{
@@ -635,7 +637,7 @@ export default function FloodDashboard() {
                       fontStyle: "italic",
                     }}
                   >
-                    Source: /src/assets/maps/{activeMapFileName}
+                    Source: {activeMapFileName}
                   </p>
                 </>
               ) : (
@@ -866,11 +868,8 @@ export default function FloodDashboard() {
                 </div>
                 {logOpen && (
                   <>
-                    <p style={{ fontSize: 14, color: "#fbead1", margin: "4px 0 16px", textAlign: "left" }}>
-                      Daily execution summary for {basin.name} — one row per monitoring run: when
-                      this basin's segment started, how long it ran within the shared job, the
-                      strongest flood-ensemble signal seen across the 5 forecast lead days, and
-                      whether that run fired a trigger tier.
+                    <p style={{ fontSize: 14, color: "#fbead1", margin: "4px 0 16px", textAlign: "center" }}>
+                      Daily execution summary for {basin.name} River Basin: one row per monitoring run
                     </p>
                     {filteredLogRows.length === 0 ? (
                       <p style={{ fontSize: 13, color: "#fbead1", fontStyle: "italic" }}>
