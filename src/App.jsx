@@ -10,8 +10,19 @@ function pct(n) {
   return (n * 100).toFixed(1) + "%";
 }
 
+const DEFAULT_BASINS = [
+  { basinKey: "cagayan", name: "Cagayan", level: "ADM2", pcode: "PH02015" },
+  { basinKey: "bicol", name: "Bicol", level: "ADM2", pcode: "PH05000" },
+];
+
 function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
+  const lines = text
+    .trim()
+    .split(/\r?\n/)
+    .filter((line) => line.replace(/,/g, "").trim().length > 0); // Ignore blank comma rows
+
+  if (lines.length <= 1) return [];
+
   const headers = lines[0].split(",").map((h) => h.trim());
   return lines.slice(1).map((line) => {
     const cols = line.split(",");
@@ -26,14 +37,17 @@ function parseCSV(text) {
 function buildBasins(rows) {
   const byKey = {};
   const order = [];
+
   rows.forEach((r) => {
-    const key = r.basin_name;
+    const key = r.basin_name?.trim().toLowerCase();
+    if (!key) return; // Skip empty basin names
+
     if (!byKey[key]) {
       byKey[key] = {
         basinKey: key,
-        name: r.name,
-        pcode: r.pcode,
-        level: r.level,
+        name: r.name || key.charAt(0).toUpperCase() + key.slice(1),
+        pcode: r.pcode || "",
+        level: r.level || "ADM2",
         fireLead: parseFloat(r.fire_lead),
         probabilityAtFire: parseFloat(r.probability_at_fire),
         popAtFire: parseFloat(r.impact_population_at_fire),
@@ -41,13 +55,34 @@ function buildBasins(rows) {
       };
       order.push(key);
     }
-    byKey[key].thresholds.push({
-      rp: "RP" + r.severity_rp,
-      probThreshold: parseFloat(r.p_threshold),
-      popThreshold: parseFloat(r.impact_population_threshold),
-      fired: r.fired.trim().toUpperCase() === "TRUE",
-    });
+
+    if (r.severity_rp) {
+      byKey[key].thresholds.push({
+        rp: "RP" + r.severity_rp,
+        probThreshold: parseFloat(r.p_threshold),
+        popThreshold: parseFloat(r.impact_population_threshold),
+        fired: r.fired?.trim().toUpperCase() === "TRUE",
+      });
+    }
   });
+
+  // Ensure default basins (e.g. Bicol) always exist in the tab list
+  DEFAULT_BASINS.forEach((def) => {
+    if (!byKey[def.basinKey]) {
+      byKey[def.basinKey] = {
+        basinKey: def.basinKey,
+        name: def.name,
+        pcode: def.pcode,
+        level: def.level,
+        fireLead: null,
+        probabilityAtFire: null,
+        popAtFire: null,
+        thresholds: [],
+      };
+      order.push(def.basinKey);
+    }
+  });
+
   return order.map((key) => byKey[key]);
 }
 
@@ -366,24 +401,16 @@ export default function FloodDashboard() {
       </div>
     );
   }
-
   const basin = basins.find((b) => b.basinKey === activeBasin);
-  if (!basin) {
-    return (
-      <div style={pageStyle}>
-        <div style={{ maxWidth: 760, margin: "0 auto", color: "#fbead1", fontSize: 14 }}>
-          No basins found in {csvPath}.
-        </div>
-      </div>
-    );
-  }
+  if (!basin) return null;
 
-  // Check activation state and automatically pick the matching map
-  const isBasinActivated = basin.thresholds.some((t) => t.fired);
+  const isBasinActivated = basin.thresholds.length > 0 && basin.thresholds.some((t) => t.fired);
   const activeMapPath = getActivatedMapPath(basin.basinKey, isBasinActivated);
 
   const expectedDate = expectedActivationDate();
   const isCurrent = csvFileDate === expectedDate;
+
+  const showActivationView = isCurrent && isBasinActivated;
 
   return (
     <div style={pageStyle}>
@@ -440,7 +467,7 @@ export default function FloodDashboard() {
           })}
         </div>
 
-        {isCurrent ? (
+        {showActivationView ? (
           <>
             {/* headline */}
             <h1
@@ -706,6 +733,7 @@ export default function FloodDashboard() {
             </section>
           </>
         ) : (
+          /* No activation fallback card */
           <div
             style={{
               border: "1px dashed #11823b",
