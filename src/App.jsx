@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const CSV_PATH = "/data/activation_2026-08-02_20260802T112020Z.csv";
-const LOG_PATH = "/logs/process.log";
-const MAP_PATH = (basinKey) => `/maps/${basinKey}_population_exposed_map.png`;
+const LOG_PATH = "/logs/workflow.log";
 
 function fmt(n) {
   return Math.round(n).toLocaleString("en-US");
@@ -25,17 +23,6 @@ function parseCSV(text) {
   });
 }
 
-function normalizeDateStr(raw) {
-  if (!raw) return raw;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-  const mdy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (mdy) {
-    const [, m, d, y] = mdy;
-    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-  }
-  return raw;
-}
-
 function buildBasins(rows) {
   const byKey = {};
   const order = [];
@@ -47,8 +34,6 @@ function buildBasins(rows) {
         name: r.name,
         pcode: r.pcode,
         level: r.level,
-        issueDate: normalizeDateStr(r.issue_date),
-        issueTime: r.issue_time,
         fireLead: parseFloat(r.fire_lead),
         probabilityAtFire: parseFloat(r.probability_at_fire),
         popAtFire: parseFloat(r.impact_population_at_fire),
@@ -147,7 +132,7 @@ function parseProcessLog(text) {
     if (basinMatch) {
       const ts = timestampOf(line);
       if (ts) {
-        closeSegment(ts.instant); // seal the previous basin's segment here
+        closeSegment(ts.instant);
         segment = {
           basinKey: basinMatch[1],
           startInstant: ts.instant,
@@ -229,7 +214,61 @@ function formatLogDateRange(rows) {
   return `${startMonth} ${start.getDate()}, ${startYear} \u2013 ${endMonth} ${end.getDate()}, ${endYear}`;
 }
 
+async function findCsvPath() {
+  const modules = import.meta.glob('/public/data/*.csv');
+  const fileKeys = Object.keys(modules);
+
+  if (fileKeys.length === 0) {
+    throw new Error("No CSV file found inside /public/data/");
+  }
+  const selectedPath = fileKeys[0].replace("/public", "");
+  console.log("Active CSV file:", selectedPath);
+  return fileKeys[0].replace('/public', '');
+}
+
+function getActivatedMapPath(basinKey, isActivated) {
+  if (!isActivated || !basinKey) return null;
+
+  const lowerBasin = basinKey.toLowerCase();
+
+  try {
+    // Eagerly glob images inside /src/assets/maps/
+    const mapModules = import.meta.glob('/src/assets/maps/*.{png,jpg,jpeg,svg,webp}', {
+      eager: true,
+      import: 'default',
+    });
+
+    const mapKeys = Object.keys(mapModules);
+
+    // Locate any file path containing the basin key
+    const matchedKey = mapKeys.find((key) => key.toLowerCase().includes(lowerBasin));
+
+    if (matchedKey) {
+      const resolvedUrl = mapModules[matchedKey]; // Actual bundled URL
+      const fileName = matchedKey.split("/").pop();
+      console.log(
+        `%c[Map Located] Found map for '${basinKey}': ${fileName}`,
+        "color: #48bf53; font-weight: bold;"
+      );
+      return resolvedUrl;
+    }
+
+    console.warn(
+      `[Map Not Located] No image containing '${lowerBasin}' in /src/assets/maps/. Available files:`,
+      mapKeys
+    );
+  } catch (err) {
+    console.error("[Map Search Error] Failed to scan /src/assets/maps/:", err);
+  }
+
+  return null;
+}
+
 export default function FloodDashboard() {
+  const [csvPath, setCsvPath] = useState(null);
+  const [csvFileDate, setCsvFileDate] = useState(null);
+  const [csvFileStamp, setCsvFileStamp] = useState(null);
+  
   const [basins, setBasins] = useState([]);
   const [logRows, setLogRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -245,9 +284,13 @@ export default function FloodDashboard() {
 
     async function loadData() {
       try {
-        const csvRes = await fetch(CSV_PATH);
+        const path = await findCsvPath();
+        const extractedDate = (path.match(/(\d{4}-\d{2}-\d{2})/) || [])[1] || null;
+        const extractedStamp = (path.match(/(\d{8}T\d{6}Z)/) || [])[1] || null;
+
+        const csvRes = await fetch(path);
         if (!csvRes.ok) {
-          throw new Error(`Could not load ${CSV_PATH} (${csvRes.status})`);
+          throw new Error(`Could not load ${path} (${csvRes.status})`);
         }
         const csvText = await csvRes.text();
         const parsedBasins = buildBasins(parseCSV(csvText));
@@ -256,11 +299,12 @@ export default function FloodDashboard() {
         try {
           const logRes = await fetch(LOG_PATH);
           if (logRes.ok) parsedLogRows = parseProcessLog(await logRes.text());
-        } catch (_) {
-          // process log is optional — section just stays empty if missing
-        }
+        } catch (_) {}
 
         if (!cancelled) {
+          setCsvPath(path);
+          setCsvFileDate(extractedDate);
+          setCsvFileStamp(extractedStamp);
           setBasins(parsedBasins);
           setActiveBasin(parsedBasins[0]?.basinKey ?? null);
           setLogRows(parsedLogRows);
@@ -315,7 +359,7 @@ export default function FloodDashboard() {
             {loadError}
           </p>
           <p style={{ color: "#fbead1", fontSize: 13, marginTop: 12 }}>
-            Check that <code>{CSV_PATH}</code> exists under your project's <code>public/</code>{" "}
+            Check that a <code>.csv</code> file exists under your project's <code>public/data/</code>{" "}
             directory.
           </p>
         </div>
@@ -328,14 +372,18 @@ export default function FloodDashboard() {
     return (
       <div style={pageStyle}>
         <div style={{ maxWidth: 760, margin: "0 auto", color: "#fbead1", fontSize: 14 }}>
-          No basins found in {CSV_PATH}.
+          No basins found in {csvPath}.
         </div>
       </div>
     );
   }
 
+  // Check activation state and automatically pick the matching map
+  const isBasinActivated = basin.thresholds.some((t) => t.fired);
+  const activeMapPath = getActivatedMapPath(basin.basinKey, isBasinActivated);
+
   const expectedDate = expectedActivationDate();
-  const isCurrent = basin.issueDate === expectedDate;
+  const isCurrent = csvFileDate === expectedDate;
 
   return (
     <div style={pageStyle}>
@@ -394,258 +442,268 @@ export default function FloodDashboard() {
 
         {isCurrent ? (
           <>
-        {/* headline */}
-        <h1
-          style={{
-            fontFamily: "Georgia, 'Times New Roman', serif",
-            fontWeight: 500,
-            fontSize: 38,
-            lineHeight: 1.15,
-            margin: "0 0 6px",
-          }}
-        >
-          Flood activation - {basin.name} River Basin
-        </h1>
-        <p
-          style={{
-            color: "#fbead1",
-            fontSize: 15,
-            margin: "0 auto 30px",
-            textAlign: "center",
-          }}
-        >
-          Anticipatory action fired at a{" "}
-          <strong style={{ color: "#f0e9dd", fontWeight: 500 }}>{basin.fireLead}-day</strong> lead
-          time. {basin.thresholds.filter((t) => t.fired).length} of {basin.thresholds.length}{" "}
-          severity levels ({basin.thresholds.map((t) => t.rp).join(", ")}) cleared their trigger
-          conditions.
-        </p>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            textAlign: "center",
-            gap: 12,
-            borderBottom: "1px solid #11823b",
-            padding: "28px 0",
-            marginBottom: 10,
-          }}
-        >
-          
-          
-        {/* Row: Activation status */}
-
-          <div
-            style={{
-              fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: 36,
-              background: "#b8320f",
-              padding: "15px 20px",
-              whiteSpace: "nowrap",
-              marginTop: 4,
-            }}
-          >
-            ACTIVATED
-          </div>
-        </div>
-
-        {/* Row: Probability and lead days */}
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 1,
-            marginBottom: 24,
-          }}
-        >
-          <div style={{ background: "#232e28", padding: "18px 12px 0 0" }}>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 36, color: "#48bf53" }}>
-              {pct(basin.probabilityAtFire)}
-            </div>
-            <div style={{ fontSize: 15, color: "#fbead1", marginTop: 4 }}>
-              forecast probability at trigger
-            </div>
-          </div>
-          <div style={{ background: "#232e28", padding: "18px 0 0 12px" }}>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 36, color: "#48bf53" }}>
-              {basin.fireLead} days
-            </div>
-            <div style={{ fontSize: 15, color: "#fbead1", marginTop: 4 }}>
-              lead time before impact
-            </div>
-          </div>
-        </div>
-        {/* Row: Population figure */}
-        <div
-          style={{
-            fontFamily: "Georgia, serif",
-            fontSize: 32,
-            fontWeight: 500,
-            lineHeight: 1,
-            marginBottom: 14,
-          }}
-        >
-          {fmt(basin.popAtFire)}
-        </div>
-
-          {/* Row 2: Phrase */}
-          <div style={{ fontSize: 15, color: "#fbead1", lineHeight: 1.4, marginBottom: 32}}>
-            people projected to be exposed to flooding at the {basin.fireLead}-day forecast lead
-          </div>
-        {/* map */}
-        <section style={{ marginBottom: 34 }}>
-          <h2 style={{ fontFamily: "Georgia, serif", fontWeight: 500, fontSize: 19, paddingTop: "25px", borderTop: "1px solid #11823b", }}>
-            Extent
-          </h2>
-          <p style={{ fontSize: 14, color: "#fbead1", margin: "0 0 18px"}}>
-            Modelled population exposed by municipality at the {basin.fireLead}-day lead.
-          </p>
-          {!mapFailed ? (
-            <>
-              <div style={{ border: "1px solid #11823b", background: "#fffdf8", padding: 6 }}>
-                <img
-                  key={basin.basinKey}
-                  src={MAP_PATH(basin.basinKey)}
-                  alt={`Map of ${basin.name} showing population exposed at lead day ${basin.fireLead}, by municipality`}
-                  style={{ display: "block", width: "100%", height: "auto" }}
-                  onError={() => setMapFailed(true)}
-                />
-              </div>
-              <p style={{ fontSize: 13, color: "#fbead1", marginTop: 10 }}>
-                Population exposed at lead day {basin.fireLead} — municipality level, {basin.name}{" "}
-                basin.
-              </p>
-            </>
-          ) : (
-            <div
+            {/* headline */}
+            <h1
               style={{
-                border: "1px dashed #11823b",
-                padding: "40px 20px",
-                textAlign: "center",
-                color: "#fbead1",
-                fontSize: 13.5,
+                fontFamily: "Georgia, 'Times New Roman', serif",
+                fontWeight: 500,
+                fontSize: 38,
+                lineHeight: 1.15,
+                margin: "0 0 6px",
               }}
             >
-              No exposure map on file yet for {basin.name}.
-            </div>
-          )}
-        </section>
+              Flood activation - {basin.name} River Basin
+            </h1>
+            <p
+              style={{
+                color: "#fbead1",
+                fontSize: 15,
+                margin: "0 auto 30px",
+                textAlign: "center",
+              }}
+            >
+              Anticipatory action fired at a{" "}
+              <strong style={{ color: "#f0e9dd", fontWeight: 500 }}>{basin.fireLead}-day</strong> lead
+              time. {basin.thresholds.filter((t) => t.fired).length} of {basin.thresholds.length}{" "}
+              severity levels ({basin.thresholds.map((t) => t.rp).join(", ")}) cleared their trigger
+              conditions.
+            </p>
 
-        {/* thresholds */}
-        <section style={{ marginBottom: 40 }}>
-          <h2 style={{ fontFamily: "Georgia, serif", fontWeight: 500, fontSize: 19, margin: "0 0 4px" }}>
-            Trigger thresholds
-          </h2>
-          <p style={{ fontSize: 14, color: "#fbead1", margin: "0 0 20px"}}>
-            A severity level fires when both the forecast probability and the projected exposed
-            population clear its threshold. Select a row to compare it against the{" "}
-            {fmt(basin.popAtFire)} figure above.
-          </p>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14.5 }}>
-            <thead>
-              <tr>
-                {["Severity", "Probability threshold", "Population threshold", "Result"].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      textAlign: "left",
-                      fontWeight: 500,
-                      color: "#fbead1",
-                      fontSize: 12.5,
-                      padding: "0 10px 8px 0",
-                      borderBottom: "1px solid #11823b",
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {basin.thresholds.map((t) => {
-                const isActive = activeRp === t.rp;
-                return (
-                  <tr
-                    key={t.rp}
-                    onClick={() => setActiveRp(isActive ? null : t.rp)}
-                    style={{
-                      cursor: "pointer",
-                      background: isActive ? "#221e17" : "transparent",
-                    }}
-                  >
-                    <td
-                      style={{
-                        fontFamily: "'IBM Plex Mono', monospace",
-                        color: "#fbead1",
-                        padding: "13px 10px 13px 0",
-                        borderBottom: "1px solid #11823b",
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                textAlign: "center",
+                gap: 12,
+                borderBottom: "1px solid #11823b",
+                padding: "28px 0",
+                marginBottom: 10,
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontSize: 36,
+                  background: "#b8320f",
+                  padding: "15px 20px",
+                  whiteSpace: "nowrap",
+                  marginTop: 4,
+                }}
+              >
+                ACTIVATED
+              </div>
+            </div>
+
+            {/* Row: Probability and lead days */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 1,
+                marginBottom: 24,
+              }}
+            >
+              <div style={{ background: "#232e28", padding: "18px 12px 0 0" }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 36, color: "#48bf53" }}>
+                  {pct(basin.probabilityAtFire)}
+                </div>
+                <div style={{ fontSize: 15, color: "#fbead1", marginTop: 4 }}>
+                  forecast probability at trigger
+                </div>
+              </div>
+              <div style={{ background: "#232e28", padding: "18px 0 0 12px" }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 36, color: "#48bf53" }}>
+                  {basin.fireLead} days
+                </div>
+                <div style={{ fontSize: 15, color: "#fbead1", marginTop: 4 }}>
+                  lead time before impact
+                </div>
+              </div>
+            </div>
+
+            {/* Row: Population figure */}
+            <div
+              style={{
+                fontFamily: "Georgia, serif",
+                fontSize: 32,
+                fontWeight: 500,
+                lineHeight: 1,
+                marginBottom: 14,
+              }}
+            >
+              {fmt(basin.popAtFire)}
+            </div>
+
+            {/* Row 2: Phrase */}
+            <div style={{ fontSize: 15, color: "#fbead1", lineHeight: 1.4, marginBottom: 32 }}>
+              people projected to be exposed to flooding at the {basin.fireLead}-day forecast lead
+            </div>
+
+            {/* map */}
+            <section style={{ marginBottom: 34 }}>
+              <h2
+                style={{
+                  fontFamily: "Georgia, serif",
+                  fontWeight: 500,
+                  fontSize: 19,
+                  paddingTop: "25px",
+                  borderTop: "1px solid #11823b",
+                }}
+              >
+                Extent
+              </h2>
+
+              {isBasinActivated && activeMapPath && !mapFailed ? (
+                <>
+                  <p style={{ fontSize: 14, color: "#fbead1", margin: "0 0 18px" }}>
+                    Modelled population exposed by municipality at the {basin.fireLead}-day lead.
+                  </p>
+                  <div style={{ border: "1px solid #11823b", background: "#fffdf8", padding: 6 }}>
+                    <img
+                      key={activeMapPath}
+                      src={activeMapPath}
+                      alt={`Map of ${basin.name} showing population exposed at lead day ${basin.fireLead}`}
+                      style={{ display: "block", width: "100%", height: "auto" }}
+                      onError={() => {
+                        console.error(`[Map Load Error] Failed to load image asset at path: ${activeMapPath}`);
+                        setMapFailed(true);
                       }}
-                    >
-                      {t.rp}
-                    </td>
-                    <td
-                      style={{
-                        fontFamily: "'IBM Plex Mono', monospace",
-                        fontSize: 14,
-                        padding: "13px 10px 13px 0",
-                        borderBottom: "1px solid #11823b",
-                      }}
-                    >
-                      {pct(t.probThreshold)}
-                    </td>
-                    <td
-                      style={{
-                        fontFamily: "'IBM Plex Mono', monospace",
-                        fontSize: 14,
-                        padding: "13px 10px 13px 0",
-                        borderBottom: "1px solid #11823b",
-                        color: isActive ? "#48bf53" : "#f0e9dd",
-                      }}
-                    >
-                      {fmt(t.popThreshold)}
-                    </td>
-                    <td style={{ padding: "13px 10px 13px 0", borderBottom: "1px solid #11823b" }}>
-                      <span
+                    />
+                  </div>
+                  <p style={{ fontSize: 13, color: "#fbead1", marginTop: 10 }}>
+                    Population exposed at lead day {basin.fireLead} — {basin.name} basin.
+                  </p>
+                </>
+              ) : (
+                <div
+                  style={{
+                    border: "1px dashed #11823b",
+                    padding: "40px 20px",
+                    textAlign: "center",
+                    color: "#fbead1",
+                    fontSize: 13.5,
+                  }}
+                >
+                  {!isBasinActivated
+                    ? `No activation triggered for ${basin.name} River Basin.`
+                    : `No exposure map found in /maps/ for ${basin.name}.`}
+                </div>
+              )}
+            </section>
+
+            {/* thresholds */}
+            <section style={{ marginBottom: 40 }}>
+              <h2 style={{ fontFamily: "Georgia, serif", fontWeight: 500, fontSize: 19, margin: "0 0 4px" }}>
+                Trigger thresholds
+              </h2>
+              <p style={{ fontSize: 14, color: "#fbead1", margin: "0 0 20px" }}>
+                A severity level fires when both the forecast probability and the projected exposed
+                population clear its threshold. Select a row to compare it against the{" "}
+                {fmt(basin.popAtFire)} figure above.
+              </p>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14.5 }}>
+                <thead>
+                  <tr>
+                    {["Severity", "Probability threshold", "Population threshold", "Result"].map((h) => (
+                      <th
+                        key={h}
                         style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 7,
-                          fontFamily: "'IBM Plex Mono', monospace",
-                          fontSize: 12.5,
+                          textAlign: "left",
+                          fontWeight: 500,
                           color: "#fbead1",
+                          fontSize: 12.5,
+                          padding: "0 10px 8px 0",
+                          borderBottom: "1px solid #11823b",
                         }}
                       >
-                        <span
-                          style={{
-                            width: 7,
-                            height: 7,
-                            background: t.fired ? "#b8320f" : "#5a5548",
-                            display: "inline-block",
-                          }}
-                        />
-                        {t.fired ? "fired" : "not fired"}
-                      </span>
-                    </td>
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {activeRp && (
-            <p style={{ fontSize: 13.5, color: "#48bf53", marginTop: 14 }}>
-              {(() => {
-                const t = basin.thresholds.find((x) => x.rp === activeRp);
-                const diff = basin.popAtFire - t.popThreshold;
-                return `${fmt(basin.popAtFire)} ${diff >= 0 ? "exceeds" : "falls short of"} the ${
-                  activeRp
-                } population threshold of ${fmt(t.popThreshold)} by ${fmt(Math.abs(diff))} people.`;
-              })()}
-            </p>
-          )}
-        </section>
+                </thead>
+                <tbody>
+                  {basin.thresholds.map((t) => {
+                    const isActive = activeRp === t.rp;
+                    return (
+                      <tr
+                        key={t.rp}
+                        onClick={() => setActiveRp(isActive ? null : t.rp)}
+                        style={{
+                          cursor: "pointer",
+                          background: isActive ? "#221e17" : "transparent",
+                        }}
+                      >
+                        <td
+                          style={{
+                            fontFamily: "'IBM Plex Mono', monospace",
+                            color: "#fbead1",
+                            padding: "13px 10px 13px 0",
+                            borderBottom: "1px solid #11823b",
+                          }}
+                        >
+                          {t.rp}
+                        </td>
+                        <td
+                          style={{
+                            fontFamily: "'IBM Plex Mono', monospace",
+                            fontSize: 14,
+                            padding: "13px 10px 13px 0",
+                            borderBottom: "1px solid #11823b",
+                          }}
+                        >
+                          {pct(t.probThreshold)}
+                        </td>
+                        <td
+                          style={{
+                            fontFamily: "'IBM Plex Mono', monospace",
+                            fontSize: 14,
+                            padding: "13px 10px 13px 0",
+                            borderBottom: "1px solid #11823b",
+                            color: isActive ? "#48bf53" : "#f0e9dd",
+                          }}
+                        >
+                          {fmt(t.popThreshold)}
+                        </td>
+                        <td style={{ padding: "13px 10px 13px 0", borderBottom: "1px solid #11823b" }}>
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 7,
+                              fontFamily: "'IBM Plex Mono', monospace",
+                              fontSize: 12.5,
+                              color: "#fbead1",
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 7,
+                                height: 7,
+                                background: t.fired ? "#b8320f" : "#5a5548",
+                                display: "inline-block",
+                              }}
+                            />
+                            {t.fired ? "fired" : "not fired"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {activeRp && (
+                <p style={{ fontSize: 13.5, color: "#48bf53", marginTop: 14 }}>
+                  {(() => {
+                    const t = basin.thresholds.find((x) => x.rp === activeRp);
+                    const diff = basin.popAtFire - t.popThreshold;
+                    return `${fmt(basin.popAtFire)} ${diff >= 0 ? "exceeds" : "falls short of"} the ${
+                      activeRp
+                    } population threshold of ${fmt(t.popThreshold)} by ${fmt(Math.abs(diff))} people.`;
+                  })()}
+                </p>
+              )}
+            </section>
           </>
         ) : (
           <div
@@ -674,7 +732,7 @@ export default function FloodDashboard() {
           </div>
         )}
 
-        {/* process log — summarized to one row per day, filtered to the active basin */}
+        {/* process log */}
         <section style={{ marginBottom: 40 }}>
           {(() => {
             const filteredLogRows = logRows.filter(
@@ -732,11 +790,11 @@ export default function FloodDashboard() {
                 </div>
                 {logOpen && (
                   <>
-                    <p style={{ fontSize: 14, color: "#fbead1", margin: "4px 0 16px", textAlign: "left",}}>
+                    <p style={{ fontSize: 14, color: "#fbead1", margin: "4px 0 16px", textAlign: "left" }}>
                       Daily execution summary for {basin.name} — one row per monitoring run: when
                       this basin's segment started, how long it ran within the shared job, the
-                      strongest flood-ensemble signal seen across the
-                      5 forecast lead days, and whether that run fired a trigger tier.
+                      strongest flood-ensemble signal seen across the 5 forecast lead days, and
+                      whether that run fired a trigger tier.
                     </p>
                     {filteredLogRows.length === 0 ? (
                       <p style={{ fontSize: 13, color: "#fbead1", fontStyle: "italic" }}>
@@ -761,7 +819,6 @@ export default function FloodDashboard() {
                                       padding: "0 12px 8px 0",
                                       borderBottom: "1px solid #11823b",
                                       whiteSpace: "nowrap",
-                                    textAlign: "left",
                                     }}
                                   >
                                     {h}
@@ -852,11 +909,7 @@ export default function FloodDashboard() {
             color: "#fbead1",
             lineHeight: 1.6,
           }}
-        >
-          {/*Source: {CSV_PATH}, {basins.map((b) => b.name).join(" and ")} basins. RP = return period,
-          the severity band a forecast is measured against; population thresholds and exposure
-          figures are model estimates, not confirmed ground counts. */}
-        </footer>
+        />
       </div>
     </div>
   );
